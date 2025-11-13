@@ -32,6 +32,11 @@
         .sensitive-text {
             color: #e2f3ff;
         }
+
+        .bright-placeholder {
+            display: block;
+            min-height: 1.75rem;
+        }
     </style>
 </head>
 
@@ -65,37 +70,37 @@
                     <div class="bg-white/5 rounded-xl p-4 space-y-2" id="bright-container"
                         style="background-color: white;">
                         <p class="text-xs text-slate-400 uppercase">热度指数</p>
-                        <p class="sensitive-text text-2xl font-semibold" id="heat-index">82</p>
+                        <p class="sensitive-text text-2xl font-semibold bright-placeholder" id="heat-index"></p>
                         <p class="text-xs text-slate-400">较昨日 +5</p>
                     </div>
                     <div class="bg-white/5 rounded-xl p-4 space-y-2" id="bright-container-1"
                         style="background-color: white;">
                         <p class="text-xs text-slate-400 uppercase">负面评论</p>
-                        <p class="sensitive-text text-2xl font-semibold" id="negative-count">312</p>
+                        <p class="sensitive-text text-2xl font-semibold bright-placeholder" id="negative-count"></p>
                         <p class="text-xs text-slate-400">突发高峰 9:10</p>
                     </div>
                     <div class="bg-white/5 rounded-xl p-4 space-y-2" id="bright-container-2"
                         style="background-color: white;">
                         <p class="text-xs text-slate-400 uppercase">危机标签</p>
-                        <p class="sensitive-text text-2xl font-semibold" id="crisis-tags">3</p>
+                        <p class="sensitive-text text-2xl font-semibold bright-placeholder" id="crisis-tags"></p>
                         <p class="text-xs text-slate-400">需响应</p>
                     </div>
                     <div class="bg-white/5 rounded-xl p-4 space-y-2" id="bright-container-3"
                         style="background-color: white;">
                         <p class="text-xs text-slate-400 uppercase">情绪平衡</p>
-                        <p class="sensitive-text text-2xl font-semibold" id="balance">46% 正向</p>
+                        <p class="sensitive-text text-2xl font-semibold bright-placeholder" id="balance"></p>
                         <p class="text-xs text-slate-400">高于目标 5%</p>
                     </div>
                     <div class="bg-cyan-900/30 rounded-xl p-4 space-y-2" id="bright-container-4"
                         style="background-color: white;">
                         <p class="text-xs text-slate-400 uppercase">互动完成度</p>
-                        <p class="sensitive-text text-2xl font-semibold" id="engagement-rate">76%</p>
+                        <p class="sensitive-text text-2xl font-semibold bright-placeholder" id="engagement-rate"></p>
                         <p class="text-xs text-slate-400">周环比 +12%</p>
                     </div>
                     <div class="bg-cyan-900/30 rounded-xl p-4 space-y-2" id="bright-container-5"
                         style="background-color: white;">
                         <p class="text-xs text-slate-400 uppercase">粉丝回复率</p>
-                        <p class="sensitive-text text-2xl font-semibold" id="reply-rate">58%</p>
+                        <p class="sensitive-text text-2xl font-semibold bright-placeholder" id="reply-rate"></p>
                         <p class="text-xs text-slate-400">客服 SLA 90%</p>
                     </div>
                 </div>
@@ -107,8 +112,8 @@
                 <h2 class="text-lg font-semibold text-white">危机提醒</h2>
                 <ul class="mt-4 space-y-3">
                     <li id="bright-container-6" style="background-color: white;">
-                        <p class="font-semibold text-white" id="bright-content-1">#耳机发热</p>
-                        <p class="sensitive-text" id="bright-content">9 分钟内新增 86 条负评 · 需技术公告</p>
+                        <p class="font-semibold text-white bright-placeholder" id="bright-content-1"></p>
+                        <p class="sensitive-text bright-placeholder" id="bright-content"></p>
                     </li>
                     <li>
                         <p class="font-semibold text-white">#渠道缺货</p>
@@ -216,91 +221,124 @@
     </main>
 
     <script>
-        const syncBtn = document.getElementById('sync-btn');
-        const heatIndex = document.getElementById('heat-index');
-        const negativeCount = document.getElementById('negative-count');
-        const crisisTags = document.getElementById('crisis-tags');
-        const balance = document.getElementById('balance');
-        const syncHint = document.getElementById('sync-hint');
-        const engagementRate = document.getElementById('engagement-rate');
-        const replyRate = document.getElementById('reply-rate');
-        const articleSelector = document.getElementById('article-selector');
-        const articleSentiment = document.getElementById('article-sentiment');
-        const articleMeta = document.getElementById('article-meta');
-        const articleTags = document.getElementById('article-tags');
-        const articleAction = document.getElementById('article-action');
-
-        const articleData = [
-            {
-                sentiment: '-0.63',
-                meta: '阅读 42w · 评论 5.6k',
-                tags: '“发热”“虚假宣传”',
-                action: '技术团队 1h 内回复 + 发布降温 FAQ',
-                color: 'text-rose-300'
-            },
-            {
-                sentiment: '+0.41',
-                meta: '阅读 18w · 评论 2.1k',
-                tags: '“透明”“诚意”',
-                action: '精选正向评论置顶 · 强化口碑',
-                color: 'text-emerald-300'
-            },
-            {
-                sentiment: '-0.12',
-                meta: '阅读 9w · 评论 980',
-                tags: '“排队”“人工客服”',
-                action: '同步工单系统 + 增设人工入口',
-                color: 'text-amber-300'
-            }
-        ];
-
-        if (syncBtn) {
-            syncBtn.addEventListener('click', () => {
-                heatIndex.textContent = '88';
-                negativeCount.textContent = '274';
-                crisisTags.textContent = '2';
-                balance.textContent = '53% 正向';
-                if (engagementRate) {
-                    engagementRate.textContent = '81%';
-                }
-                if (replyRate) {
-                    replyRate.textContent = '62%';
-                }
-                syncHint.classList.remove('hidden');
-            });
-        }
-
-        if (articleSelector) {
-            articleSelector.addEventListener('change', (event) => {
-                const idx = Number(event.target.value);
-                const payload = articleData[idx] || articleData[0];
-                articleSentiment.textContent = payload.sentiment;
-                articleSentiment.className = `text-2xl font-semibold ${payload.color}`;
-                articleMeta.textContent = payload.meta;
-                articleTags.textContent = payload.tags;
-                articleAction.textContent = payload.action;
-            });
-        }
-    </script>
-    <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const brightPairs = [
-                { containerId: 'bright-container', contentId: 'heat-index' },
-                { containerId: 'bright-container-1', contentId: 'negative-count' },
-                { containerId: 'bright-container-2', contentId: 'crisis-tags' },
-                { containerId: 'bright-container-3', contentId: 'balance' },
-                { containerId: 'bright-container-4', contentId: 'engagement-rate' },
-                { containerId: 'bright-container-5', contentId: 'reply-rate' },
-                { containerId: 'bright-container-6', contentId: 'bright-content' },
-                { containerId: 'bright-container-6', contentId: 'bright-content-1' },
+            const syncBtn = document.getElementById('sync-btn');
+            const syncHint = document.getElementById('sync-hint');
+            const articleSelector = document.getElementById('article-selector');
+            const articleSentiment = document.getElementById('article-sentiment');
+            const articleMeta = document.getElementById('article-meta');
+            const articleTags = document.getElementById('article-tags');
+            const articleAction = document.getElementById('article-action');
+
+            const articleData = [
+                {
+                    sentiment: '-0.63',
+                    meta: '阅读 42w · 评论 5.6k',
+                    tags: '“发热”“虚假宣传”',
+                    action: '技术团队 1h 内回复 + 发布降温 FAQ',
+                    color: 'text-rose-300'
+                },
+                {
+                    sentiment: '+0.41',
+                    meta: '阅读 18w · 评论 2.1k',
+                    tags: '“透明”“诚意”',
+                    action: '精选正向评论置顶 · 强化口碑',
+                    color: 'text-emerald-300'
+                },
+                {
+                    sentiment: '-0.12',
+                    meta: '阅读 9w · 评论 980',
+                    tags: '“排队”“人工客服”',
+                    action: '同步工单系统 + 增设人工入口',
+                    color: 'text-amber-300'
+                }
             ];
 
-            if (window.BrightMode && typeof window.BrightMode.apply === 'function') {
-                brightPairs.forEach(({ containerId, contentId }) => {
+            const decodeBase64Utf8 = (input) => {
+                try {
+                    return decodeURIComponent(atob(input).split('').map((char) => (
+                        `%${(`00${char.charCodeAt(0).toString(16)}`).slice(-2)}`
+                    )).join(''));
+                } catch (error) {
+                    console.warn('Bright payload decode failed', error);
+                    return '';
+                }
+            };
+
+            const hasBrightMode = () => window.BrightMode && typeof window.BrightMode.apply === 'function';
+
+            const applyBrightMask = (containerId, contentId, payload, { encoded = true } = {}) => {
+                const container = document.getElementById(containerId);
+                const content = document.getElementById(contentId);
+                if (!container || !content || payload == null) {
+                    return;
+                }
+                const source = encoded ? decodeBase64Utf8(String(payload)) : String(payload);
+                if (!source) {
+                    return;
+                }
+                content.dataset.brightText = source;
+                if (hasBrightMode()) {
                     BrightMode.apply({ containerId, contentId });
+                    content.textContent = '';
+                } else {
+                    content.textContent = source;
+                }
+            };
+
+            const brightPairs = [
+                { containerId: 'bright-container', contentId: 'heat-index', payload: 'ODI=' },
+                { containerId: 'bright-container-1', contentId: 'negative-count', payload: 'MzEy' },
+                { containerId: 'bright-container-2', contentId: 'crisis-tags', payload: 'Mw==' },
+                { containerId: 'bright-container-3', contentId: 'balance', payload: 'NDYlIOato+WQkQ==' },
+                { containerId: 'bright-container-4', contentId: 'engagement-rate', payload: 'NzYl' },
+                { containerId: 'bright-container-5', contentId: 'reply-rate', payload: 'NTgl' },
+                {
+                    containerId: 'bright-container-6',
+                    contentId: 'bright-content',
+                    payload: 'OSDliIbpkp/lhoXmlrDlop4gODYg5p2h6LSf6K+EIMK3IOmcgOaKgOacr+WFrOWRig=='
+                },
+                { containerId: 'bright-container-6', contentId: 'bright-content-1', payload: 'I+iAs+acuuWPkeeDrQ==' },
+            ];
+
+            const brightLookup = new Map();
+            brightPairs.forEach(({ containerId, contentId, payload }) => {
+                brightLookup.set(contentId, containerId);
+                applyBrightMask(containerId, contentId, payload);
+            });
+
+            const updateBrightValue = (contentId, value) => {
+                const containerId = brightLookup.get(contentId);
+                if (!containerId) {
+                    return;
+                }
+                applyBrightMask(containerId, contentId, value, { encoded: false });
+            };
+
+            if (syncBtn) {
+                syncBtn.addEventListener('click', () => {
+                    updateBrightValue('heat-index', '88');
+                    updateBrightValue('negative-count', '274');
+                    updateBrightValue('crisis-tags', '2');
+                    updateBrightValue('balance', '53% 正向');
+                    updateBrightValue('engagement-rate', '81%');
+                    updateBrightValue('reply-rate', '62%');
+                    if (syncHint) {
+                        syncHint.classList.remove('hidden');
+                    }
                 });
-            } else {
-                console.warn('BrightMode not available');
+            }
+
+            if (articleSelector && articleSentiment && articleMeta && articleTags && articleAction) {
+                articleSelector.addEventListener('change', (event) => {
+                    const idx = Number(event.target.value);
+                    const payload = articleData[idx] || articleData[0];
+                    articleSentiment.textContent = payload.sentiment;
+                    articleSentiment.className = `text-2xl font-semibold ${payload.color}`;
+                    articleMeta.textContent = payload.meta;
+                    articleTags.textContent = payload.tags;
+                    articleAction.textContent = payload.action;
+                });
             }
         });
     </script>
