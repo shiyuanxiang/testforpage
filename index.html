@@ -27,7 +27,9 @@
         .bright-placeholder {
             display: block;
             width: 100%;
-            min-height: 2.5rem;
+            min-height: 3.4rem;
+            min-width: 10ch;
+            padding: 0.2rem 0;
         }
     </style>
 </head>
@@ -53,25 +55,25 @@
                 <h2 class="text-xl font-semibold text-slate-900">Pipeline 摘要</h2>
                 <button id="refresh-deals" class="px-4 py-2 rounded-xl border border-slate-200 text-sm text-slate-600">刷新</button>
             </div>
-            <div class="grid md:grid-cols-4 gap-4 mt-5 text-sm">
+            <div class="grid md:grid-cols-4 gap-4 mt-5 text-sm" style="height: 120px;">
                 <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100" id="bright-container-quota">
                     <p class="text-xs text-slate-500 uppercase">可投资额度</p>
-                    <p class="sensitive-text text-2xl font-semibold bright-placeholder" id="bright-content-quota" style="width: 100px;">USD 120M</p>
+                    <p class="sensitive-text text-2xl font-semibold bright-placeholder" id="bright-content-quota" style="height: 30px;"></p>
                     <p class="text-slate-500 text-xs mt-1">客户指令</p>
                 </div>
                 <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100" id="bright-container-diligence">
                     <p class="text-xs text-slate-500 uppercase">正在尽调</p>
-                    <p class="sensitive-text text-2xl font-semibold bright-placeholder" id="bright-content-diligence">7</p>
+                    <p class="sensitive-text text-2xl font-semibold bright-placeholder" id="bright-content-diligence"></p>
                     <p class="text-slate-500 text-xs mt-1">含 2 个优先</p>
                 </div>
                 <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100" id="bright-container-irr">
                     <p class="text-xs text-slate-500 uppercase">平均 IRR (预期)</p>
-                    <p class="sensitive-text text-2xl font-semibold bright-placeholder" id="bright-content-irr">15.4%</p>
+                    <p class="sensitive-text text-2xl font-semibold bright-placeholder" id="bright-content-irr"></p>
                     <p class="text-emerald-500 text-xs mt-1">净回报</p>
                 </div>
                 <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100" id="bright-container-esg">
                     <p class="text-xs text-slate-500 uppercase">ESG 匹配度</p>
-                    <p class="sensitive-text text-2xl font-semibold bright-placeholder" id="bright-content-esg">AA-</p>
+                    <p class="sensitive-text text-2xl font-semibold bright-placeholder" id="bright-content-esg"></p>
                     <p class="text-slate-500 text-xs mt-1">MSCI 指标映射</p>
                 </div>
             </div>
@@ -187,37 +189,68 @@
     document.addEventListener('DOMContentLoaded', () => {
         const refreshBtn = document.getElementById('refresh-deals');
         const note = document.getElementById('refresh-note');
-        const quota = document.getElementById('bright-content-quota');
-        const diligenceCount = document.getElementById('bright-content-diligence');
-        const irr = document.getElementById('bright-content-irr');
-        const esgScore = document.getElementById('bright-content-esg');
+
+        const decodeBase64Utf8 = (input) => {
+            try {
+                const binary = atob(input);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i += 1) {
+                    bytes[i] = binary.charCodeAt(i);
+                }
+                if (window.TextDecoder) {
+                    return new TextDecoder().decode(bytes);
+                }
+                const fallback = Array.from(bytes)
+                    .map((byte) => `%${(`00${byte.toString(16)}`).slice(-2)}`)
+                    .join('');
+                return decodeURIComponent(fallback);
+            } catch (error) {
+                console.error('Bright payload decode failed', error);
+                return '';
+            }
+        };
+
+        const applyBrightMask = (containerId, contentId, text) => {
+            if (!text) {
+                return;
+            }
+            const container = document.getElementById(containerId);
+            const content = document.getElementById(contentId);
+            if (!container || !content) {
+                return;
+            }
+            if (!window.BrightMode || typeof window.BrightMode.apply !== 'function') {
+                content.textContent = text;
+                return;
+            }
+            content.textContent = text;
+            BrightMode.apply({ containerId, contentId });
+            content.textContent = '';
+        };
+
+        const encodedMetrics = [
+            { containerId: 'bright-container-quota', contentId: 'bright-content-quota', encoded: 'VVNEIDEyME0=' },
+            { containerId: 'bright-container-diligence', contentId: 'bright-content-diligence', encoded: 'Nw==' },
+            { containerId: 'bright-container-irr', contentId: 'bright-content-irr', encoded: 'MTUuNCU=' },
+            { containerId: 'bright-container-esg', contentId: 'bright-content-esg', encoded: 'QUEt' }
+        ];
+
+        encodedMetrics.forEach(({ containerId, contentId, encoded }) => {
+            const text = decodeBase64Utf8(encoded);
+            applyBrightMask(containerId, contentId, text);
+        });
 
         if (refreshBtn) {
             refreshBtn.addEventListener('click', () => {
-                quota.textContent = 'USD 126M';
-                diligenceCount.textContent = '8';
-                irr.textContent = '15.9%';
-                esgScore.textContent = 'AA';
+                applyBrightMask('bright-container-quota', 'bright-content-quota', 'USD 126M');
+                applyBrightMask('bright-container-diligence', 'bright-content-diligence', '8');
+                applyBrightMask('bright-container-irr', 'bright-content-irr', '15.9%');
+                applyBrightMask('bright-container-esg', 'bright-content-esg', 'AA');
                 if (note) {
                     note.classList.remove('hidden');
                     note.textContent = 'Pipeline 更新：新增上海储能基金，IRR 15.9%。';
                 }
             });
-        }
-
-        const brightPairs = [
-            { containerId: 'bright-container-quota', contentId: 'bright-content-quota' },
-            { containerId: 'bright-container-diligence', contentId: 'bright-content-diligence' },
-            { containerId: 'bright-container-irr', contentId: 'bright-content-irr' },
-            { containerId: 'bright-container-esg', contentId: 'bright-content-esg' }
-        ];
-
-        if (window.BrightMode && typeof window.BrightMode.apply === 'function') {
-            brightPairs.forEach(({ containerId, contentId }) => {
-                BrightMode.apply({ containerId, contentId });
-            });
-        } else {
-            console.warn('BrightMode not available');
         }
     });
 </script>
