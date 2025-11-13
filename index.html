@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ESG可持续投资趋势分析平台</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="bright.css">
+    <script src="bright.js" defer></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -111,8 +113,10 @@
         }
         .bonds-table th, .bonds-table td {
             border: 1px solid #dee2e6;
-            padding: 12px;
+            padding: 16px 14px;
             text-align: left;
+            min-height: 1.75rem;
+            vertical-align: middle;
         }
         .bonds-table th {
             background-color: #f8f9fa;
@@ -121,6 +125,21 @@
         }
         .bonds-table tr:nth-child(even) {
             background-color: #f8f9fa;
+        }
+        .bonds-table col.col-name {
+            width: 30%;
+        }
+        .bonds-table col.col-issuer {
+            width: 22%;
+        }
+        .bonds-table col.col-size {
+            width: 16%;
+        }
+        .bonds-table col.col-impact {
+            width: 20%;
+        }
+        .bonds-table col.col-score {
+            width: 12%;
         }
         .portfolio-section {
             margin-top: 30px;
@@ -166,6 +185,11 @@
             font-weight: 600;
             color: #28a745;
         }
+        .portfolio-result .bright-placeholder,
+        .portfolio-result li {
+            min-height: 1.5rem;
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -199,68 +223,180 @@
         <!-- 绿色债券详情 -->
         <div class="bonds-section">
             <h2>顶尖绿色债券详情</h2>
-            <table class="bonds-table" id="bondsTable">
-                <thead>
-                    <tr>
-                        <th>债券名称</th>
-                        <th>发行方</th>
-                        <th>规模 (亿美元)</th>
-                        <th>碳排放减少 (吨CO2/年)</th>
-                        <th>ESG评分</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Green Climate Bond 2025</td>
-                        <td>World Bank</td>
-                        <td>50</td>
-                        <td>1,200,000</td>
-                        <td>A+</td>
-                    </tr>
-                    <tr>
-                        <td>Sustainable Tech Fund Bond</td>
-                        <td>Climate Tech Inc.</td>
-                        <td>30</td>
-                        <td>850,000</td>
-                        <td>A</td>
-                    </tr>
-                    <tr>
-                        <td>Renewable Energy Green Bond</td>
-                        <td>EU Green Deal</td>
-                        <td>75</td>
-                        <td>2,500,000</td>
-                        <td>AA</td>
-                    </tr>
-                </tbody>
-            </table>
+            <div id="bright-container-bonds" class="bright-wrapper">
+                <table class="bonds-table" id="bondsTable">
+                    <colgroup>
+                        <col class="col-name">
+                        <col class="col-issuer">
+                        <col class="col-size">
+                        <col class="col-impact">
+                        <col class="col-score">
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th>债券名称</th>
+                            <th>发行方</th>
+                            <th>规模 (亿美元)</th>
+                            <th>碳排放减少 (吨CO2/年)</th>
+                            <th>ESG评分</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bondsTableBody"></tbody>
+                </table>
+            </div>
         </div>
 
         <!-- 投资组合模拟 -->
         <div class="portfolio-section">
             <h2>责任投资组合构建</h2>
             <button class="generate-btn" onclick="generatePortfolio()">生成模拟组合</button>
-            <div id="portfolioResult" class="portfolio-result">
-                <h3>个性化责任投资组合模拟</h3>
-                <p>基于中性风险偏好与ESG优先级构建的模拟组合：</p>
-                <ul>
-                    <li>Green Climate Bond 2025: 40% (预期年化回报: 4.2%)</li>
-                    <li>Sustainable Tech Fund Bond: 30% (预期年化回报: 5.1%)</li>
-                    <li>Renewable Energy Green Bond: 30% (预期年化回报: 3.8%)</li>
-                </ul>
-                <p>总预期年化回报: 4.4% | 预计碳足迹减少: 1,450,000吨CO2/年</p>
+            <div id="bright-container-portfolio" class="bright-wrapper">
+                <div id="portfolioResult" class="portfolio-result">
+                    <h3 id="portfolioTitle" class="bright-placeholder"></h3>
+                    <p id="portfolioIntro" class="bright-placeholder"></p>
+                    <ul id="portfolioList" class="bright-placeholder"></ul>
+                    <p id="portfolioSummary" class="bright-placeholder"></p>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
         let chart;
+        let bondsDataset = null;
+        let portfolioDataset = null;
+        let bondsRendered = false;
+        let portfolioRendered = false;
+        let brightCellCounter = 0;
+
+        const decodeBase64Utf8 = (input) => {
+            try {
+                const binary = atob(input);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i += 1) {
+                    bytes[i] = binary.charCodeAt(i);
+                }
+                if (window.TextDecoder) {
+                    return new TextDecoder().decode(bytes);
+                }
+                const fallback = Array.from(bytes).map((byte) => `%${(`00${byte.toString(16)}`).slice(-2)}`).join('');
+                return decodeURIComponent(fallback);
+            } catch (error) {
+                console.error('Bright payload decode failed', error);
+                return '';
+            }
+        };
+
+        const parsePayload = (payload, label) => {
+            if (!payload) {
+                return null;
+            }
+            try {
+                return JSON.parse(payload);
+            } catch (error) {
+                console.error(`Failed to parse ${label}`, error);
+                return null;
+            }
+        };
+
+        function applyBrightMask(containerId, contentId, text) {
+            const container = document.getElementById(containerId);
+            const content = document.getElementById(contentId);
+            const normalizedText = text != null ? String(text) : '';
+            if (!container || !content || !normalizedText) {
+                return;
+            }
+            if (!window.BrightMode || typeof window.BrightMode.apply !== 'function') {
+                return;
+            }
+            content.textContent = normalizedText;
+            BrightMode.apply({ containerId, contentId });
+            content.textContent = '';
+        }
+
+        function renderBondsTable() {
+            if (bondsRendered || !bondsDataset || !Array.isArray(bondsDataset.rows) || !bondsDataset.rows.length) {
+                return;
+            }
+            const tbody = document.getElementById('bondsTableBody');
+            if (!tbody) {
+                return;
+            }
+            tbody.innerHTML = '';
+
+            const brightJobs = [];
+            bondsDataset.rows.forEach((row) => {
+                const tr = document.createElement('tr');
+                ['name', 'issuer', 'size', 'impact', 'score'].forEach((key) => {
+                    const td = document.createElement('td');
+                    td.className = 'bright-placeholder';
+                    const cellId = `bonds-cell-${brightCellCounter += 1}`;
+                    td.id = cellId;
+                    tr.appendChild(td);
+                    brightJobs.push({ containerId: cellId, contentId: cellId, text: row[key] });
+                });
+                tbody.appendChild(tr);
+            });
+
+            brightJobs.forEach(({ containerId, contentId, text }) => applyBrightMask(containerId, contentId, text));
+            bondsRendered = true;
+        }
+
+        function renderPortfolioResult() {
+            if (portfolioRendered || !portfolioDataset) {
+                return;
+            }
+            const titleEl = document.getElementById('portfolioTitle');
+            const introEl = document.getElementById('portfolioIntro');
+            const listEl = document.getElementById('portfolioList');
+            const summaryEl = document.getElementById('portfolioSummary');
+            if (!titleEl || !introEl || !listEl || !summaryEl) {
+                return;
+            }
+
+            const jobs = [];
+            const queueElement = (element, text, fallbackId) => {
+                if (!element || !text) {
+                    return;
+                }
+                if (!element.id) {
+                    element.id = fallbackId;
+                }
+                jobs.push({ containerId: element.id, contentId: element.id, text });
+            };
+
+            queueElement(titleEl, portfolioDataset.title, 'portfolio-title');
+            queueElement(introEl, portfolioDataset.intro, 'portfolio-intro');
+
+            listEl.innerHTML = '';
+            listEl.classList.remove('bright-placeholder');
+            if (Array.isArray(portfolioDataset.holdings)) {
+                portfolioDataset.holdings.forEach((entry, index) => {
+                    const li = document.createElement('li');
+                    li.className = 'bright-placeholder';
+                    const liId = `portfolio-holding-${index + 1}`;
+                    li.id = liId;
+                    listEl.appendChild(li);
+                    jobs.push({ containerId: liId, contentId: liId, text: entry });
+                });
+            }
+
+            queueElement(summaryEl, portfolioDataset.summary, 'portfolio-summary');
+
+            jobs.forEach(({ containerId, contentId, text }) => applyBrightMask(containerId, contentId, text));
+            portfolioRendered = true;
+        }
 
         // 执行搜索分析
         function performSearch() {
             document.getElementById('searchResult').style.display = 'block';
             initChart();
             setTimeout(() => {
-                document.getElementById('bondsTable').style.display = 'table';
+                const bondsTable = document.getElementById('bondsTable');
+                if (bondsTable) {
+                    bondsTable.style.display = 'table';
+                    renderBondsTable();
+                }
             }, 1000);
         }
 
@@ -325,8 +461,25 @@
 
         // 生成组合
         function generatePortfolio() {
-            document.getElementById('portfolioResult').style.display = 'block';
+            const portfolioResult = document.getElementById('portfolioResult');
+            if (portfolioResult) {
+                portfolioResult.style.display = 'block';
+                renderPortfolioResult();
+            }
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const bondsPayload = decodeBase64Utf8('eyJyb3dzIjogW3sibmFtZSI6ICJHcmVlbiBDbGltYXRlIEJvbmQgMjAyNSIsICJpc3N1ZXIiOiAiV29ybGQgQmFuayIsICJzaXplIjogIjUwIiwgImltcGFjdCI6ICIxLDIwMCwwMDAiLCAic2NvcmUiOiAiQSsifSwgeyJuYW1lIjogIlN1c3RhaW5hYmxlIFRlY2ggRnVuZCBCb25kIiwgImlzc3VlciI6ICJDbGltYXRlIFRlY2ggSW5jLiIsICJzaXplIjogIjMwIiwgImltcGFjdCI6ICI4NTAsMDAwIiwgInNjb3JlIjogIkEifSwgeyJuYW1lIjogIlJlbmV3YWJsZSBFbmVyZ3kgR3JlZW4gQm9uZCIsICJpc3N1ZXIiOiAiRVUgR3JlZW4gRGVhbCIsICJzaXplIjogIjc1IiwgImltcGFjdCI6ICIyLDUwMCwwMDAiLCAic2NvcmUiOiAiQUEifV19');
+            const portfolioPayload = decodeBase64Utf8('eyJ0aXRsZSI6ICLkuKrmgKfljJbotKPku7vmipXotYTnu4TlkIjmqKHmi58iLCAiaW50cm8iOiAi5Z+65LqO5Lit5oCn6aOO6Zmp5YGP5aW95LiORVNH5LyY5YWI57qn5p6E5bu655qE5qih5ouf57uE5ZCI77yaIiwgImhvbGRpbmdzIjogWyJHcmVlbiBDbGltYXRlIEJvbmQgMjAyNTogNDAlICjpooTmnJ/lubTljJblm57miqU6IDQuMiUpIiwgIlN1c3RhaW5hYmxlIFRlY2ggRnVuZCBCb25kOiAzMCUgKOmihOacn+W5tOWMluWbnuaKpTogNS4xJSkiLCAiUmVuZXdhYmxlIEVuZXJneSBHcmVlbiBCb25kOiAzMCUgKOmihOacn+W5tOWMluWbnuaKpTogMy44JSkiXSwgInN1bW1hcnkiOiAi5oC76aKE5pyf5bm05YyW5Zue5oqlOiA0LjQlIHwg6aKE6K6h56Kz6Laz6L+55YeP5bCROiAxLDQ1MCwwMDDlkKhDTzIv5bm0In0=');
+
+            if (!window.BrightMode || typeof window.BrightMode.apply !== 'function') {
+                console.warn('BrightMode not available');
+                return;
+            }
+
+            bondsDataset = parsePayload(bondsPayload, 'bonds table payload');
+            portfolioDataset = parsePayload(portfolioPayload, 'portfolio payload');
+        });
 
         // 自动加载
         window.onload = function() {
